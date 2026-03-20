@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crunk Chat - Real-time Messaging</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #05070d;
+            color: #e6e6e6;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar - Users List */
+        .sidebar {
+            width: 320px;
+            background: #0b1222;
+            border-right: 1px solid #1f2937;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -320px;
+                height: 100vh;
+                z-index: 1000;
+            }
+            .sidebar.open {
+                left: 0;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #1f2937;
+            background: #0f172a;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #34d399;
+        }
+
+        .user-info h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #111827;
+            border-radius: 30px;
+            padding: 8px 16px;
+            border: 1px solid #1f2937;
+        }
+
+        .search-box i {
+            color: #34d399;
+            margin-right: 8px;
+        }
+
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 14px;
+        }
+
+        .search-box input::placeholder {
+            color: #6b7280;
+        }
+
+        .section-title {
+            padding: 15px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #9ca3af;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 4px;
+        }
+
+        .user-item:hover {
+            background: #1f2937;
+            transform: translateX(4px);
+        }
+
+        .user-item.active {
+            background: #1f2937;
+            border-left: 3px solid #34d399;
+        }
+
+        .user-avatar-small {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .user-status {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .user-status.online {
+            color: #34d399;
+        }
+
+        .online-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #34d399;
+            display: inline-block;
+            margin-right: 4px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #05070d;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #0b1222;
+            border-bottom: 1px solid #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: #34d399;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .chat-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .chat-user-info h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .chat-user-status {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .chat-user-status.online {
+            color: #34d399;
+        }
+
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-image: radial-gradient(#1f2937 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .message {
+            max-width: 70%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+        }
+
+        .message.received {
+            align-self: flex-start;
+        }
+
+        .message-content {
+            padding: 10px 14px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.sent .message-content {
+            background: #34d399;
+            color: #05070d;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received .message-content {
+            background: #1f2937;
+            color: white;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-info {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-top: 4px;
+            padding: 0 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .message.sent .message-info {
+            justify-content: flex-end;
+        }
+
+        .message-status {
+            font-size: 10px;
+        }
+
+        .message-status.read {
+            color: #34d399;
+        }
+
+        .date-separator {
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .date-separator span {
+            background: #1f2937;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px;
+            background: #0b1222;
+            border-top: 1px solid #1f2937;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-area input {
+            flex: 1;
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 30px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-area input:focus {
+            border-color: #34d399;
+            box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+        }
+
+        .input-area input::placeholder {
+            color: #6b7280;
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #34d399;
+            border: none;
+            color: #05070d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            background: #2bb078;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Empty State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #34d399;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: #9ca3af;
+            margin-bottom: 20px;
+        }
+
+        /* Login Overlay */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #05070d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .login-card {
+            background: #0b1222;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid #1f2937;
+        }
+
+        .login-card i {
+            font-size: 64px;
+            color: #34d399;
+            margin-bottom: 20px;
+        }
+
+        .login-card h2 {
+            margin-bottom: 10px;
+        }
+
+        .login-card p {
+            color: #9ca3af;
+            margin-bottom: 30px;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px;
+            background: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .google-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 211, 153, 0.3);
+        }
+
+        .google-btn img {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #34d399;
+            color: #05070d;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            z-index: 10000;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #1f2937;
+            border-top-color: #34d399;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Login Overlay -->
+        <div id="loginOverlay" class="login-overlay">
+            <div class="login-card">
+                <i class="fas fa-comment-dots"></i>
+                <h2>Welcome to Crunk Chat</h2>
+                <p>Sign in with your Google account to start chatting</p>
+                <button class="google-btn" id="googleLoginBtn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-profile" id="userProfile">
+                    <img src="" alt="Avatar" class="user-avatar" id="userAvatar">
+                    <div class="user-info">
+                        <h3 id="userName">Loading...</h3>
+                        <p id="userEmail"></p>
+                    </div>
+                </div>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search users..." id="searchUsers">
+                </div>
+            </div>
+            <div class="section-title">
+                <i class="fas fa-users"></i> All Users
+            </div>
+            <div class="users-list" id="usersList">
+                <div style="text-align: center; padding: 20px;">Loading users...</div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div id="chatHeader">
+                    <div class="empty-state" style="padding: 0;">
+                        <i class="fas fa-comments"></i>
+                        <h3>Select a chat</h3>
+                        <p>Choose a user from the list to start messaging</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                <div class="empty-state">
+                    <i class="fas fa-comment-dots"></i>
+                    <h3>No messages yet</h3>
+                    <p>Select a user to start chatting</p>
+                </div>
+            </div>
+
+            <div class="input-area" id="inputArea" style="display: none;">
+                <input type="text" placeholder="Type a message..." id="messageInput">
+                <button class="send-btn" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="loader"></div>
+    </div>
+    <div id="toastContainer" class="toast"></div>
+
+    <script type="module" src="chat-app.js"></script>
+</body>
+</html>
